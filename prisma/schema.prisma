@@ -1,0 +1,147 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id          String   @id @default(cuid())
+  name        String
+  phone       String   @unique
+  email       String   @unique
+  passwordHash String  @map("password_hash")
+  bio         String?
+  avatarUrl   String?  @map("avatar_url")
+  role        String   @default("user")  // "user" | "admin" | "owner"
+  warnedAt    DateTime? @map("warned_at")
+  warnedReason String? @map("warned_reason")
+  bannedAt    DateTime? @map("banned_at")
+  bannedReason String? @map("banned_reason")
+  lastActive  DateTime? @map("last_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  forumPosts          ForumPost[]
+  forumReplies        ForumReply[]
+  sentMessages        Message[]         @relation("SentMessages")
+  receivedMessages    Message[]         @relation("ReceivedMessages")
+  voiceRooms          VoiceRoom[]
+  globalChatMessages  GlobalChatMessage[]
+  notifications       Notification[]
+  materials           Material[]
+
+  @@map("users")
+}
+
+model ForumCategory {
+  id          String   @id @default(cuid())
+  name        String
+  description String
+  slug        String   @unique
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  posts ForumPost[]
+
+  @@map("forum_categories")
+}
+
+model ForumPost {
+  id         String   @id @default(cuid())
+  title      String
+  content    String
+  authorId   String   @map("author_id")
+  categoryId String   @map("category_id")
+  pinned     Boolean  @default(false)
+  locked     Boolean  @default(false)
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  author  User           @relation(fields: [authorId], references: [id])
+  category ForumCategory @relation(fields: [categoryId], references: [id])
+  replies ForumReply[]
+
+  @@map("forum_posts")
+}
+
+model ForumReply {
+  id        String   @id @default(cuid())
+  content   String
+  authorId  String   @map("author_id")
+  postId    String   @map("post_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  author User      @relation(fields: [authorId], references: [id])
+  post   ForumPost @relation(fields: [postId], references: [id])
+
+  @@map("forum_replies")
+}
+
+model Message {
+  id         String   @id @default(cuid())
+  content    String
+  senderId   String   @map("sender_id")
+  receiverId String   @map("receiver_id")
+  createdAt  DateTime @default(now()) @map("created_at")
+  read       Boolean  @default(false)
+
+  sender   User @relation("SentMessages", fields: [senderId], references: [id])
+  receiver User @relation("ReceivedMessages", fields: [receiverId], references: [id])
+
+  @@map("messages")
+}
+
+model VoiceRoom {
+  id        String   @id @default(cuid())
+  name      String
+  createdBy String   @map("created_by")
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  creator User @relation(fields: [createdBy], references: [id])
+
+  @@map("voice_rooms")
+}
+
+model Notification {
+  id         String   @id @default(cuid())
+  userId     String   @map("user_id")
+  type       String
+  title      String
+  message    String
+  link       String?
+  read       Boolean  @default(false)
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("notifications")
+}
+
+model Material {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  fileUrl     String   @map("file_url")
+  fileType    String   @map("file_type")  // "pdf" | "image" | "video" | "word"
+  fileName    String   @map("file_name")
+  fileSize    Int      @map("file_size")
+  uploadedBy  String   @map("uploaded_by")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  uploader User @relation(fields: [uploadedBy], references: [id])
+
+  @@map("materials")
+}
+
+model GlobalChatMessage {
+  id        String   @id @default(cuid())
+  content   String
+  authorId  String   @map("author_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  author User @relation(fields: [authorId], references: [id])
+
+  @@map("global_chat_messages")
+}

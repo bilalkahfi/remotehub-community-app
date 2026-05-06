@@ -1,0 +1,11 @@
+# Community app - Add this to your Caddy configuration
+# If using docker-compose, add this to your Caddyfile service:
+
+community.bilal-automation.tech {
+    reverse_proxy 172.18.0.5:3000
+}
+
+# Or if running Caddy natively:
+# community.bilal-automation.tech {
+#     reverse_proxy localhost:3000
+# }

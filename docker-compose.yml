@@ -1,0 +1,55 @@
+version: "3.8"
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_DB: community_app
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+    networks:
+      - app-network
+
+  app:
+    build: .
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      DATABASE_URL: "postgresql://postgres:${DB_PASSWORD:-postgres}@postgres:5432/community_app?schema=public"
+      JWT_SECRET: ${JWT_SECRET}
+      NEXTAUTH_URL: ${APP_URL:-http://localhost:3000}
+      NEXTAUTH_SECRET: ${NEXTAUTH_SECRET}
+      NEXT_PUBLIC_APP_URL: ${APP_URL:-http://localhost:3000}
+      NEXT_PUBLIC_APP_NAME: "RemoteHub - Komunitas Remote Worker"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - app-network
+    volumes:
+      - uploads:/app/public/uploads
+
+  # Init container to run DB migration & seed
+  init:
+    build: .
+    restart: "no"
+    entrypoint: ["/bin/sh", "/app/scripts/init.sh"]
+    environment:
+      DATABASE_URL: "postgresql://postgres:${DB_PASSWORD:-postgres}@postgres:5432/community_app?schema=public"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - app-network
+
+volumes:
+  postgres_data:
+  uploads:
+
+networks:
+  app-network:
+    driver: bridge
