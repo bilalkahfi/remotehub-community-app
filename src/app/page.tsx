@@ -10,7 +10,6 @@ export default function HomePage() {
   const { user, loading } = useAuth();
   const router = useRouter();
 
-  // Redirect logged-in users straight to forum
   useEffect(() => {
     if (!loading && user) {
       router.replace("/forum");
@@ -25,81 +24,100 @@ export default function HomePage() {
     );
   }
 
-  // If user is logged in, don't show landing page
   if (user) {
     return null;
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen relative overflow-hidden"
+      style={{
+        background: "linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%)"
+      }}
+    >
+      {/* Ambient blobs */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute -top-40 -right-40 w-96 h-96 rounded-full opacity-[0.06]"
+          style={{ background: "radial-gradient(circle, #6366f1 0%, transparent 70%)" }} />
+        <div className="absolute -bottom-40 -left-40 w-[500px] h-[500px] rounded-full opacity-[0.04]"
+          style={{ background: "radial-gradient(circle, #a855f7 0%, transparent 70%)" }} />
+        <div className="absolute top-1/2 left-1/3 w-72 h-72 rounded-full opacity-[0.03]"
+          style={{ background: "radial-gradient(circle, #06b6d4 0%, transparent 70%)" }} />
+      </div>
+
+      {/* Nav */}
+      <nav className="relative flex items-center justify-between max-w-6xl mx-auto px-6 py-5">
+        <span className="text-lg font-bold text-white tracking-tight">
+          Remote<span className="text-indigo-400">Hub</span>
+        </span>
+        <div className="flex items-center gap-4">
+          <Link href="/login"
+            className="text-sm text-white/40 hover:text-white transition-colors">
+            Login
+          </Link>
+          <Link href="/register"
+            className="px-4 py-2 rounded-lg text-sm font-semibold text-white transition-all duration-200 shadow-lg"
+            style={{ background: "linear-gradient(135deg, #6366f1, #a855f7)" }}
+          >
+            Daftar
+          </Link>
+        </div>
+      </nav>
+
       {/* Hero */}
-      <section className="py-20 md:py-28 text-center">
-        <h1 className="text-4xl md:text-6xl font-bold tracking-tight">
-          <span className="bg-gradient-to-r from-primary-600 to-blue-500 bg-clip-text text-transparent">
-            RemoteHub
+      <section className="relative max-w-5xl mx-auto px-6 pt-16 sm:pt-24 pb-20 text-center">
+        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-medium mb-8 border"
+          style={{
+            background: "rgba(99,102,241,0.08)",
+            borderColor: "rgba(99,102,241,0.2)",
+            color: "#818cf8"
+          }}
+        >
+          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+          Komunitas Remote Worker Indonesia
+        </div>
+
+        <h1 className="text-4xl sm:text-6xl font-bold tracking-tight leading-tight mb-4">
+          <span className="text-white">Ngobrol, Kolaborasi,</span><br />
+          <span className="text-transparent bg-clip-text"
+            style={{ backgroundImage: "linear-gradient(135deg, #6366f1, #a855f7)" }}>
+            Bareng Remote Worker
           </span>
         </h1>
-        <p className="mt-4 text-lg md:text-xl text-slate-600 dark:text-slate-400 max-w-2xl mx-auto">
-          Komunitas untuk para pekerja remote Indonesia. Diskusi, kolaborasi, dan berkembang bersama.
+        <p className="text-base sm:text-lg max-w-xl mx-auto leading-relaxed mb-10"
+          style={{color: "rgba(255,255,255,0.4)"}}
+        >
+          Forum diskusi, chat real-time, dan voice room khusus untuk pekerja remote
+          Indonesia. Temukan komunitas, bagikan pengalaman, dan berkembang bersama.
         </p>
-        <div className="mt-8 flex flex-wrap justify-center gap-4">
-          {user ? (
-            <Link href="/forum">
-              <Button size="lg">Masuk ke Forum</Button>
-            </Link>
-          ) : (
-            <>
-              <Link href="/register">
-                <Button size="lg">Gabung Sekarang</Button>
-              </Link>
-              <Link href="/login">
-                <Button variant="outline" size="lg">
-                  Login
-                </Button>
-              </Link>
-            </>
-          )}
+
+        <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          <Link href="/register"
+            className="px-8 py-3.5 rounded-xl text-sm font-semibold text-white transition-all duration-200 hover:scale-[1.03] active:scale-[0.97] shadow-lg"
+            style={{
+              background: "linear-gradient(135deg, #6366f1, #a855f7)",
+            }}
+          >
+            Gabung Sekarang →
+          </Link>
+          <Link href="/login"
+            className="px-8 py-3.5 rounded-xl text-sm font-semibold transition-all duration-200 hover:scale-[1.03] active:scale-[0.97]"
+            style={{
+              background: "rgba(255,255,255,0.06)",
+              border: "1px solid rgba(255,255,255,0.08)",
+              color: "rgba(255,255,255,0.6)",
+            }}
+          >
+            Masuk
+          </Link>
         </div>
       </section>
 
-      {/* Features */}
-      <section className="py-16 grid grid-cols-1 md:grid-cols-3 gap-8">
-        <div className="p-6 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700">
-          <div className="w-12 h-12 rounded-lg bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center mb-4">
-            <svg className="w-6 h-6 text-primary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-            </svg>
-          </div>
-          <h3 className="text-lg font-semibold mb-2">Forum Diskusi</h3>
-          <p className="text-slate-600 dark:text-slate-400 text-sm">
-            Diskusikan topik seputar remote work, tips produktivitas, tools, dan karir.
-          </p>
-        </div>
-
-        <div className="p-6 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700">
-          <div className="w-12 h-12 rounded-lg bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center mb-4">
-            <svg className="w-6 h-6 text-primary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-            </svg>
-          </div>
-          <h3 className="text-lg font-semibold mb-2">Pesan Pribadi</h3>
-          <p className="text-slate-600 dark:text-slate-400 text-sm">
-            Chat real-time dengan sesama anggota komunitas.
-          </p>
-        </div>
-
-        <div className="p-6 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700">
-          <div className="w-12 h-12 rounded-lg bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center mb-4">
-            <svg className="w-6 h-6 text-primary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-            </svg>
-          </div>
-          <h3 className="text-lg font-semibold mb-2">Voice & Video</h3>
-          <p className="text-slate-600 dark:text-slate-400 text-sm">
-            Ngobrol langsung via voice call atau video conference.
-          </p>
-        </div>
-      </section>
+      {/* Footer */}
+      <footer className="relative text-center pb-8">
+        <p className="text-xs" style={{color: "rgba(255,255,255,0.15)"}}>
+          RemoteHub · Next.js + Socket.io + PostgreSQL
+        </p>
+      </footer>
     </div>
   );
 }
