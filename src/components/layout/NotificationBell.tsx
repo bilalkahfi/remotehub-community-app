@@ -1,13 +1,13 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { Bell, X, MessageSquare, FileText, Reply } from "lucide-react";
+import { Bell, X, MessageSquare, FileText, Reply, AtSign, AlertTriangle } from "lucide-react";
 import Link from "next/link";
 import { useAuth } from "@/hooks/useAuth";
 
 interface Notification {
   id: string;
-  type: "forum_post" | "forum_reply" | "new_message";
+  type: "forum_post" | "forum_reply" | "new_message" | "mention" | "dm" | "warning";
   title: string;
   message: string;
   link: string | null;
@@ -101,11 +101,16 @@ export function NotificationBell() {
   const getIcon = (type: string) => {
     switch (type) {
       case "new_message":
+      case "dm":
         return <MessageSquare className="w-4 h-4 text-blue-400" />;
       case "forum_post":
         return <FileText className="w-4 h-4 text-green-400" />;
       case "forum_reply":
         return <Reply className="w-4 h-4 text-yellow-400" />;
+      case "mention":
+        return <AtSign className="w-4 h-4 text-pink-400" />;
+      case "warning":
+        return <AlertTriangle className="w-4 h-4 text-yellow-400" />;
       default:
         return <Bell className="w-4 h-4" />;
     }

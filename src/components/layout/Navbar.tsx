@@ -21,9 +21,12 @@ export function Navbar({ onToggleSidebar, sidebarOpen }: NavbarProps = {}) {
 
   const getPageTitle = () => {
     if (pathname?.startsWith("/forum")) return "Forum";
+    if (pathname?.startsWith("/chat")) return "Chat";
     if (pathname?.startsWith("/messages")) return "Messages";
     if (pathname?.startsWith("/members")) return "Members";
     if (pathname?.startsWith("/voice")) return "Voice";
+    if (pathname?.startsWith("/materials")) return "Materi";
+    if (pathname?.startsWith("/admin")) return "Admin";
     if (pathname === "/") return "Home";
     return "RemoteHub";
   };
@@ -34,6 +37,7 @@ export function Navbar({ onToggleSidebar, sidebarOpen }: NavbarProps = {}) {
     if (pathname?.match(/^\/forum\/[^/]+\/[^/]+$/)) return "Post";
     if (pathname?.match(/^\/messages\/[^/]+$/)) return "Chat";
     if (pathname?.match(/^\/members\/[^/]+$/)) return "Profile";
+    if (pathname?.match(/^\/admin\/users$/)) return "Users";
     return "";
   };
 
