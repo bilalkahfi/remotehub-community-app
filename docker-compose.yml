@@ -10,6 +10,11 @@ services:
       POSTGRES_DB: community_app
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d community_app"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
     networks:
       - app-network
 
@@ -25,6 +30,11 @@ services:
       NEXTAUTH_SECRET: ${NEXTAUTH_SECRET}
       NEXT_PUBLIC_APP_URL: ${APP_URL:-http://localhost:3000}
       NEXT_PUBLIC_APP_NAME: "RemoteHub - Komunitas Remote Worker"
+      # Berdua - notifikasi push & pengingat balasan
+      VAPID_PUBLIC_KEY: ${VAPID_PUBLIC_KEY}
+      VAPID_PRIVATE_KEY: ${VAPID_PRIVATE_KEY}
+      VAPID_SUBJECT: ${VAPID_SUBJECT:-mailto:admin@example.com}
+      CRON_SECRET: ${CRON_SECRET}
     depends_on:
       postgres:
         condition: service_healthy
@@ -43,6 +53,28 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+    networks:
+      - app-network
+
+  # Pemicu pengingat Berdua: nembak endpoint cron tiap menit.
+  berdua-cron:
+    image: alpine:3.20
+    restart: unless-stopped
+    environment:
+      CRON_SECRET: ${CRON_SECRET}
+    command:
+      - /bin/sh
+      - -c
+      - |
+        apk add --no-cache curl >/dev/null
+        while true; do
+          curl -fsS -m 30 -o /dev/null \
+            -H "Authorization: Bearer $$CRON_SECRET" \
+            http://app:3000/api/berdua/cron/reminders || echo "tick gagal, coba lagi menit depan"
+          sleep 60
+        done
+    depends_on:
+      - app
     networks:
       - app-network
 

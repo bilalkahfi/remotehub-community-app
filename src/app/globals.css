@@ -141,3 +141,17 @@
     overflow: hidden;
   }
 }
+
+/* Berdua: latar gelap dipasang di body, plus lapisan fixed sebagai cadangan
+   buat browser lama yang belum dukung :has(). */
+body:has(.berdua-shell) {
+  background: #0f0b18;
+}
+
+.berdua-shell::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background: #0f0b18;
+  z-index: -1;
+}
