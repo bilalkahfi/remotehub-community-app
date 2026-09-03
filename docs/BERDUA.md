@@ -86,8 +86,9 @@ tiap menit. Kalau deploy tanpa Docker, pasang cron sendiri:
 ## Penting: syarat notifikasi
 
 **Wajib HTTPS.** Web Push gak jalan di `http://` (kecuali `localhost` buat
-ngetes). Pakai domain beneran plus sertifikat — `Caddyfile.sample` di repo ini
-udah ngurusin sertifikat otomatis.
+ngetes). Dua jalan: punya server sendiri plus domain — `Caddyfile.sample` di
+repo ini udah ngurusin sertifikat otomatis — atau deploy ke Vercel yang
+ngasih HTTPS gratis (lihat bagian di bawah).
 
 **Android (Chrome):** buka `/berdua`, izinin notifikasi waktu diminta. Selesai.
 Disaranin tetep "Add to Home screen" biar gampang dibuka.
@@ -102,6 +103,90 @@ dibuka dari Home Screen. Urutannya:
 
 Kalau langkah 2–3 dilewat, tombol nyalain notifikasi bakal nolak dan ngasih tau
 alasannya. Ini batasan iOS, bukan bug.
+
+## Deploy di Vercel (kalau belum punya server/HTTPS)
+
+Vercel ngasih HTTPS gratis di `*.vercel.app`, jadi Web Push langsung jalan
+tanpa ngurus sertifikat. Tapi ada tiga hal yang beda dari deploy Docker.
+
+### 1. Database harus di luar
+
+Vercel gak nyimpen Postgres. Pakai Neon, Supabase, atau penyedia Postgres lain
+yang punya paket gratis, terus isi `DATABASE_URL` di Environment Variables
+Vercel pakai **connection string yang pooled**.
+
+Buat sekali jalan `db:push`, pakai string **direct/unpooled** dari lokal:
+
+```bash
+DATABASE_URL="postgresql://...direct..." npm run db:push
+```
+
+Migrasi lewat koneksi pooled sering gagal, jadi jangan kebalik.
+
+### 2. Cron-nya harus dari luar
+
+**Vercel Hobby cuma ngasih cron sekali sehari.** Nulis `*/5 * * * *` di
+`vercel.json` bikin deploy-nya gagal, bukan cuma diabaikan. Sekali sehari
+jelas gak kepake buat tangga 30 menit.
+
+Dua jalan keluar, dua-duanya gratis:
+
+**a. GitHub Actions** (udah disiapin di `.github/workflows/berdua-reminder.yml`)
+
+Isi dua secret di repo, Settings → Secrets and variables → Actions:
+
+| Secret | Isi |
+| --- | --- |
+| `BERDUA_URL` | `https://app-lo.vercel.app` (tanpa garis miring di akhir) |
+| `BERDUA_CRON_SECRET` | sama persis kayak `CRON_SECRET` di Vercel |
+
+Jadwalnya tiap 5 menit. Catatan jujur: jadwal GitHub Actions cuma jalan di
+branch default (jadi baru aktif setelah PR-nya di-merge), sering telat
+beberapa menit pas GitHub lagi rame, dan **dimatiin otomatis kalau repo gak
+ada aktivitas 60 hari**. Buat pengingat balasan, telat 5 menit gak ngaruh.
+
+**b. cron-job.org atau sejenisnya** — daftar gratis, bisa tiap menit, lebih
+tepat waktu. Setel:
+
+- URL: `https://app-lo.vercel.app/api/berdua/cron/reminders`
+- Method: POST
+- Header: `Authorization: Bearer <CRON_SECRET>`
+
+Kalau langganan Vercel Pro, cron bawaan Vercel baru bisa dipakai. Bikin
+`vercel.json`:
+
+```json
+{ "crons": [{ "path": "/api/berdua/cron/reminders", "schedule": "* * * * *" }] }
+```
+
+Vercel otomatis ngirim header `Authorization: Bearer $CRON_SECRET` kalau env
+var `CRON_SECRET` diset, dan endpoint di app ini emang nerima format itu.
+
+### 3. Yang gak jalan di serverless
+
+- **Upload materi** (`/api/upload`) nulis ke disk. Di Vercel filesystem-nya
+  gak permanen, jadi fitur itu bakal patah. Gak ngaruh ke Berdua, tapi jangan
+  kaget. Kalau perlu, pindahin ke object storage.
+- **Socket.io** gak bisa nyantol di serverless. Berdua emang gak makai — pesan
+  baru masuk lewat polling, dan notifikasi lewat push OS, jadi aman.
+
+Polling-nya sendiri adaptif: 4 detik pas lagi rame, melar sampai 30 detik
+kalau sepi, dan berhenti pas tab ketutup. Ini biar pemakaian function di paket
+gratis gak kesedot cuma buat nanya "ada pesan baru gak".
+
+### Ringkasan env di Vercel
+
+```
+DATABASE_URL          (pooled)
+JWT_SECRET
+NEXTAUTH_SECRET
+APP_URL               https://app-lo.vercel.app
+NEXT_PUBLIC_APP_URL   https://app-lo.vercel.app
+VAPID_PUBLIC_KEY
+VAPID_PRIVATE_KEY
+VAPID_SUBJECT
+CRON_SECRET
+```
 
 ## Ngetes tanpa buka browser
 
@@ -135,6 +220,8 @@ public/berdua/                    Manifest + ikon PWA
 scripts/generate-vapid.mjs        Bikin VAPID key
 scripts/generate-berdua-icons.mjs Bikin ulang ikon
 scripts/berdua-selftest.ts        Uji mesin pengingat
+.github/workflows/                Pemicu cron dari luar (buat Vercel dkk)
+  berdua-reminder.yml
 ```
 
 ## Yang belum ada

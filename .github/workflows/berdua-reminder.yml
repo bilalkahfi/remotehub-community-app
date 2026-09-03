@@ -1,0 +1,39 @@
+# Pemicu pengingat Berdua buat hosting yang gak bisa jalanin cron sendiri
+# (Vercel Hobby cuma boleh sekali sehari, Netlify/Cloudflare Pages mirip).
+#
+# Butuh dua secret di Settings > Secrets and variables > Actions:
+#   BERDUA_URL          https://app-lo.vercel.app   (tanpa garis miring di akhir)
+#   BERDUA_CRON_SECRET  sama persis kayak CRON_SECRET di hosting
+#
+# Catatan: jadwal GitHub Actions cuma jalan di branch default, minimalnya 5
+# menit, dan sering telat beberapa menit pas GitHub lagi rame. Buat pengingat
+# balasan itu masih kekejar. Kalau mau lebih presisi, pakai cron-job.org.
+name: Berdua reminder tick
+
+on:
+  schedule:
+    - cron: "*/5 * * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: berdua-reminder
+  cancel-in-progress: false
+
+jobs:
+  tick:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Panggil endpoint pengingat
+        env:
+          BERDUA_URL: ${{ secrets.BERDUA_URL }}
+          BERDUA_CRON_SECRET: ${{ secrets.BERDUA_CRON_SECRET }}
+        run: |
+          if [ -z "$BERDUA_URL" ] || [ -z "$BERDUA_CRON_SECRET" ]; then
+            echo "Secret BERDUA_URL / BERDUA_CRON_SECRET belum diisi. Dilewat."
+            exit 0
+          fi
+
+          curl -fsS -m 30 -X POST \
+            -H "Authorization: Bearer $BERDUA_CRON_SECRET" \
+            "$BERDUA_URL/api/berdua/cron/reminders"

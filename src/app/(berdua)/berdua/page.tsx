@@ -150,47 +150,90 @@ export default function BerduaChatPage() {
   }, [router, scrollToBottom, markRead, refreshStatus]);
 
   // --- Polling pesan baru --------------------------------------------------
+  // Jaraknya melar sendiri kalau lagi sepi (4 detik sampai 30 detik) dan balik
+  // rapat begitu ada yang masuk. Di hosting serverless tiap polling dihitung
+  // sebagai pemanggilan fungsi, jadi diem-dieman gak usah dibayar mahal.
   useEffect(() => {
     if (!pair?.paired) return;
 
-    const tick = async () => {
-      if (document.visibilityState === "hidden") return;
+    const FAST_MS = 4000;
+    const SLOW_MS = 30_000;
+    let delay = FAST_MS;
+    let stopped = false;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+
+    const schedule = () => {
+      if (stopped) return;
+      timer = setTimeout(poll, delay);
+    };
+
+    const poll = async () => {
+      if (stopped) return;
+
+      // Tab ketutup: berhenti nanya sampai dibuka lagi. Notifikasi push tetep
+      // masuk lewat service worker, jadi gak ada yang kelewat.
+      if (document.visibilityState === "hidden") {
+        delay = SLOW_MS;
+        schedule();
+        return;
+      }
+
       try {
         const query = lastMessageAt.current
           ? `?after=${encodeURIComponent(lastMessageAt.current)}`
           : "";
         const data = await api<{ messages: Message[] }>(`/api/berdua/messages${query}`);
-        if (data.messages.length === 0) return;
 
-        const stick = isNearBottom();
-        setMessages((prev) => {
-          const seen = new Set(prev.map((m) => m.id));
-          return [...prev, ...data.messages.filter((m) => !seen.has(m.id))];
-        });
-        lastMessageAt.current = data.messages.at(-1)!.createdAt;
-        if (stick) scrollToBottom(true);
+        if (data.messages.length === 0) {
+          delay = Math.min(delay * 2, SLOW_MS);
+        } else {
+          delay = FAST_MS;
+          const stick = isNearBottom();
+          setMessages((prev) => {
+            const seen = new Set(prev.map((m) => m.id));
+            return [...prev, ...data.messages.filter((m) => !seen.has(m.id))];
+          });
+          lastMessageAt.current = data.messages.at(-1)!.createdAt;
+          if (stick) scrollToBottom(true);
 
-        await markRead();
-        await refreshStatus();
+          await markRead();
+          await refreshStatus();
+        }
       } catch {
-        // Sinyal jelek, coba lagi di tick berikutnya.
+        // Sinyal jelek: mundur dulu, jangan malah nembakin server.
+        delay = Math.min(delay * 2, SLOW_MS);
       }
+
+      schedule();
     };
 
-    const messageTimer = setInterval(tick, 4000);
-    const statusTimer = setInterval(refreshStatus, 30_000);
+    const wake = () => {
+      delay = FAST_MS;
+      if (timer) clearTimeout(timer);
+      poll();
+    };
+
+    schedule();
+
+    const statusTimer = setInterval(() => {
+      if (document.visibilityState === "visible") refreshStatus();
+    }, 30_000);
+
     const onVisible = () => {
       if (document.visibilityState === "visible") {
-        tick();
+        wake();
         markRead();
       }
     };
     document.addEventListener("visibilitychange", onVisible);
+    window.addEventListener("focus", onVisible);
 
     return () => {
-      clearInterval(messageTimer);
+      stopped = true;
+      if (timer) clearTimeout(timer);
       clearInterval(statusTimer);
       document.removeEventListener("visibilitychange", onVisible);
+      window.removeEventListener("focus", onVisible);
     };
   }, [pair?.paired, scrollToBottom, markRead, refreshStatus]);
 
