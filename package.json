@@ -10,10 +10,14 @@
     "db:push": "prisma db push",
     "db:migrate": "prisma migrate dev",
     "db:seed": "tsx src/app/api/seeds/run.ts",
-    "db:studio": "prisma studio"
+    "db:studio": "prisma studio",
+    "berdua:vapid": "node scripts/generate-vapid.mjs",
+    "berdua:icons": "node scripts/generate-berdua-icons.mjs",
+    "berdua:selftest": "tsx scripts/berdua-selftest.ts"
   },
   "dependencies": {
     "@prisma/client": "^5.22.0",
+    "@types/web-push": "^3.6.4",
     "bcryptjs": "^2.4.3",
     "jsonwebtoken": "^9.0.2",
     "lucide-react": "^0.453.0",
@@ -23,6 +27,7 @@
     "react-dom": "^18.3.1",
     "socket.io": "^4.8.0",
     "socket.io-client": "^4.8.0",
+    "web-push": "^3.6.7",
     "zod": "^3.23.8"
   },
   "devDependencies": {
